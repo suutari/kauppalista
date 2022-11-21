@@ -20,7 +20,6 @@ export default async function handler(
             });
             return;
         }
-        console.log('Id number', idNumber);
         const shopList = await db.getShopList(idNumber);
         res.status(200).json(shopList);
     }
