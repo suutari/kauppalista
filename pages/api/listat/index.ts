@@ -1,11 +1,8 @@
 import type {NextApiRequest, NextApiResponse} from 'next';
+
 import {ShopList} from '@/utils/types';
 import {getDatabase} from '@/utils/db';
-
-type ErrorResponse = {
-    error: string;
-    errorCode: string;
-};
+import {ErrorResponse} from '@/utils/errors';
 
 export default async function handler(
     req: NextApiRequest,
@@ -29,7 +26,7 @@ export default async function handler(
         res.status(400).json({
             error: `${error.message}`,
             errorCode: 'bad-request',
-        })
+        });
     }
 }
 
