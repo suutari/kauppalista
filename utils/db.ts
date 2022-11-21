@@ -2,19 +2,7 @@
 
 import * as sqlite from 'sqlite';
 import sqlite3 from 'sqlite3';
-
-export type ShopList = {
-    id: number;
-    name: string;
-    createdAt: Date;
-};
-
-export type ShopListItem = {
-    listId: number;
-    sequence: number;
-    text: string;
-    done: boolean;
-};
+import {ShopList, ShopListItem} from './types';
 
 export async function getDatabase(): Promise<Database> {
     const db: sqlite.Database = await sqlite.open({
@@ -83,6 +71,18 @@ export class Database {
         }));
     }
 
+    async getShopList(listId: number): Promise<ShopList> {
+        const row = await this.db.get(
+            'SELECT * FROM shoplist WHERE id=?',
+            listId
+        );
+        return {
+            id: row.id,
+            name: row.name,
+            createdAt: new Date(row.created_at + 'Z'),
+        };
+    }
+
     async getListItems(listId: number): Promise<ShopListItem[]> {
         const rows = await this.db.all(
             'SELECT * FROM shoplist_item WHERE list_id=?',
@@ -97,7 +97,7 @@ export class Database {
     }
 }
 
-async function main() {
+async function kokeile() {
     const db = await getDatabase();
     const listaId = await db.createShopList('Testilista');
     console.log(listaId);
@@ -110,4 +110,4 @@ async function main() {
     console.log(ekanListanIteemit);
 }
 
-main();
+// kokeile();
