@@ -42,7 +42,7 @@ export const getServerSideProps: GetServerSideProps<PropsType> = async (
 ) => {
     const host: string = context.req.headers.host ?? 'localhost';
     const proto = /^localhost:?/.test(host) ? 'http' : 'https';
-    const response = await fetch('${proto}://${host}/api/listat');
+    const response = await fetch(`${proto}://${host}/api/listat`);
     const listat: ShopList[] = await response.json();
 
     return {
