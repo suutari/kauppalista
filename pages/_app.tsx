@@ -1,9 +1,9 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
 import type {AppProps} from 'next/app';
 import Head from 'next/head';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
+import Layout from '@/components/Layout';
 import '../styles/globals.css';
-import Layout from '@/components/layout';
 
 export default function App({Component, pageProps}: AppProps) {
     return (

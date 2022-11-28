@@ -1,7 +1,10 @@
-export default function Home() {
+import {Page} from '@/components/Page';
+import Image from 'next/image';
+
+export default function Etusivu() {
     return (
-        <div>
-            <h1>Kauppalista</h1>
-        </div>
+        <Page title="Kauppalista">
+            <Image src="/kauppalista.ico" width={128} height={128} alt="" />
+        </Page>
     );
 }

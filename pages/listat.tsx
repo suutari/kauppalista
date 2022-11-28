@@ -12,7 +12,7 @@ export default function ListatSivu() {
     function ListItem({id, text}: {id: number; text: string}) {
         return (
             <li>
-                <Link href="/listat/{id}">
+                <Link href={`/lista/${id}`}>
                     ({id}) {text}
                 </Link>
             </li>

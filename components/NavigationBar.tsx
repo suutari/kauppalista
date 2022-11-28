@@ -1,12 +1,14 @@
 import Link from 'next/link';
-import {Container, Nav, Navbar} from 'react-bootstrap';
+import { Container, Nav, Navbar } from 'react-bootstrap';
 
 export default function NavigationBar() {
     return (
         <Navbar bg="light" expand="lg">
             <Container>
                 <Link href="/">
-                    <Navbar.Brand>Kauppalista</Navbar.Brand>
+                    <Navbar.Brand>
+                        Kauppalista
+                    </Navbar.Brand>
                 </Link>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
@@ -14,8 +16,8 @@ export default function NavigationBar() {
                         <Nav.Link as={Link} href="/">
                             Etusivu
                         </Nav.Link>
-                        <Nav.Link as={Link} href="/joku/sivu">
-                            Joku sivu
+                        <Nav.Link as={Link} href="/listat">
+                            Listat
                         </Nav.Link>
                     </Nav>
                 </Navbar.Collapse>
