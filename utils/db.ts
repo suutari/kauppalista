@@ -44,7 +44,7 @@ export class Database {
         return result.lastID!;
     }
 
-    async addItemToList(listId: number, item: string): Promise<void> {
+    async addItemToList(listId: number, item: string): Promise<number> {
         const result = await this.db.get(
             `SELECT MAX(sequence) AS maxSeq FROM shoplist_item
              WHERE list_id = ?`,
@@ -52,14 +52,33 @@ export class Database {
         );
         console.log(result);
         const maxSeq: number = result.maxSeq ?? 0;
+        const sequence = maxSeq + 1;
 
         this.db.run(
             `INSERT INTO shoplist_item (list_id, sequence, item)
              VALUES (?, ?, ?)`,
             listId,
-            maxSeq + 1,
+            sequence,
             item
         );
+        return sequence;
+    }
+
+    async getListItem(
+        listId: number,
+        sequence: number
+    ): Promise<ShopListItem> {
+        const row = await this.db.get(
+            'SELECT * FROM shoplist_item WHERE list_id=? AND sequence=?',
+            listId,
+            sequence
+        );
+        return {
+            listId: row.list_id,
+            sequence: row.sequence,
+            text: row.item,
+            done: row.done ? true : false,
+        };
     }
 
     async getShopLists(): Promise<ShopList[]> {
