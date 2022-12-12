@@ -1,7 +1,7 @@
 
 export type ShopListData = {
     name: string;
-    createdAt?: Date;
+    createdAt?: string;
 };
 
 export type ShopList = ShopListData & {

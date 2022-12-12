@@ -85,7 +85,7 @@ export class Database {
         return rows.map((row) => ({
             id: row.id,
             name: row.name,
-            createdAt: new Date(row.created_at + 'Z'),
+            createdAt: new Date(row.created_at + 'Z').toISOString(),
         }));
     }
 
@@ -97,7 +97,7 @@ export class Database {
         return {
             id: row.id,
             name: row.name,
-            createdAt: new Date(row.created_at + 'Z'),
+            createdAt: new Date(row.created_at + 'Z').toISOString(),
         };
     }
 

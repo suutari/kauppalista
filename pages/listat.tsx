@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import {Page} from '@/components/Page';
 import {callApi} from '@/utils/apicall';
+import {formatDateString} from '@/utils/datetime';
 import {ShopList} from '@/utils/types';
 
 type PropsType = {
@@ -10,11 +11,18 @@ type PropsType = {
 };
 
 export default function ListatSivu({listat}: PropsType) {
-    function ListaListItem({id, name}: {id: number; name: string}) {
+    function ListaListItem({tiedot}: {tiedot: ShopList}) {
+        const {id, name, createdAt} = tiedot;
         return (
             <li>
                 <Link href={`/lista/${id}`}>
-                    ({id}) {name}
+                    {createdAt ? (
+                        <>
+                            <i>{formatDateString(createdAt)}</i>
+                            <span>&nbsp;&ndash;&nbsp;</span>
+                        </>
+                    ) : null}
+                    {name}
                 </Link>
             </li>
         );
@@ -24,11 +32,7 @@ export default function ListatSivu({listat}: PropsType) {
         <Page title="Listat">
             <ul>
                 {listat.map((lista) => (
-                    <ListaListItem
-                        key={lista.id}
-                        id={lista.id}
-                        name={lista.name}
-                    />
+                    <ListaListItem key={lista.id} tiedot={lista} />
                 ))}
             </ul>
         </Page>
