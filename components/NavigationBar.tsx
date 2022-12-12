@@ -3,7 +3,7 @@ import { Container, Nav, Navbar } from 'react-bootstrap';
 
 export default function NavigationBar() {
     return (
-        <Navbar bg="light" expand="lg">
+        <Navbar bg="light" expand="sm">
             <Container>
                 <Link href="/">
                     <Navbar.Brand>
@@ -18,6 +18,9 @@ export default function NavigationBar() {
                         </Nav.Link>
                         <Nav.Link as={Link} href="/listat">
                             Listat
+                        </Nav.Link>
+                        <Nav.Link as={Link} href="/listat/uusi">
+                            Uusi
                         </Nav.Link>
                     </Nav>
                 </Navbar.Collapse>
