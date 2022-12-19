@@ -10,15 +10,8 @@ export default async function handler(
     res: NextApiResponse<ShopListItem[] | ShopListItem | ErrorResponse>
 ) {
     const {query} = req;
-    const {id: listIdString} = query;
-    const listId: number | null = tryParseInt(<string>listIdString);
-    if (listId === null) {
-        res.status(400).json({
-            error: "The 'id' must be integer",
-            errorCode: 'bad-request',
-        });
-        return;
-    }
+    const {id} = query;
+    const listId = id as string;
     const db = await getDatabase();
     if (req.method == 'GET') {
         const items = await db.getListItems(listId);

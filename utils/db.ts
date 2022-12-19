@@ -1,131 +1,170 @@
-#!/usr/bin/env -S npx ts-node --project node.tsconfig.json
+#!/usr/bin/env -S NODE_NO_WARNINGS=1 npx ts-node --project node.tsconfig.json
 
-import * as sqlite from 'sqlite';
-import sqlite3 from 'sqlite3';
-import {ShopList, ShopListItem} from './types';
+import {Id, ShopList, ShopListItem} from './types';
 
 export async function getDatabase(): Promise<Database> {
-    const db: sqlite.Database = await sqlite.open({
-        filename: 'database.db',
-        driver: sqlite3.Database,
-    });
-
-    await db.exec(`
-    CREATE TABLE IF NOT EXISTS shoplist (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name VARCHAR(100) NOT NULL,
-        created_at DATETIME NOT NULL
-    )`);
-    await db.exec(`
-    CREATE TABLE IF NOT EXISTS shoplist_item (
-        list_id INTEGER NOT NULL,
-        sequence INTEGER NOT NULL,
-        done BOOLEAN NOT NULL DEFAULT 0,
-        item VARCHAR(200) NOT NULL,
-        PRIMARY KEY (list_id, sequence)
-    )`);
-
-    return new Database(db);
+    const baseUrl = process.env.API_BASE_URL;
+    const appId = process.env.API_APP_ID;
+    const restApiKey = process.env.API_REST_API_KEY;
+    if (!baseUrl || !appId || !restApiKey) {
+        throw Error('API not configured');
+    }
+    return new Database({baseUrl, appId, restApiKey});
 }
 
-export class Database {
-    db: sqlite.Database;
+type DatabaseParameters = {
+    baseUrl: string;
+    appId: string;
+    restApiKey: string;
+};
 
-    constructor(db: sqlite.Database) {
-        this.db = db;
+export class Database implements DatabaseParameters {
+    baseUrl: string;
+    appId: string;
+    restApiKey: string;
+
+    constructor({baseUrl, appId, restApiKey}: DatabaseParameters) {
+        this.baseUrl = baseUrl;
+        this.appId = appId;
+        this.restApiKey = restApiKey;
     }
 
-    async createShopList(name: string): Promise<number> {
-        const result = await this.db.run(
-            `INSERT INTO shoplist (name, created_at)
-             VALUES (?, datetime('now'))`,
-            name
-        );
-        return result.lastID!;
+    async createShopList(name: string): Promise<Id> {
+        const data = await this.send('POST', '/classes/ShopList', {name});
+        return data.objectId;
     }
 
-    async addItemToList(listId: number, item: string): Promise<number> {
-        const result = await this.db.get(
-            `SELECT MAX(sequence) AS maxSeq FROM shoplist_item
-             WHERE list_id = ?`,
-            listId
-        );
-        const maxSeq: number = result.maxSeq ?? 0;
+    async addItemToList(listId: Id, text: string): Promise<number> {
+        const shopList = this.makeShopListPointer(listId);
+        const params = {where: {shopList}, order: '-sequence', limit: 1};
+        const result = await this.send('GET', '/classes/ShopListItem', params);
+        const maxSeq = result.results?.[0]?.sequence ?? 0;
         const sequence = maxSeq + 1;
 
-        this.db.run(
-            `INSERT INTO shoplist_item (list_id, sequence, item)
-             VALUES (?, ?, ?)`,
-            listId,
+        const data = await this.send('POST', '/classes/ShopListItem', {
+            shopList,
             sequence,
-            item
-        );
+            text,
+        });
         return sequence;
     }
 
-    async getListItem(
-        listId: number,
-        sequence: number
-    ): Promise<ShopListItem> {
-        const row = await this.db.get(
-            'SELECT * FROM shoplist_item WHERE list_id=? AND sequence=?',
-            listId,
-            sequence
+    async getListItem(listId: Id, sequence: number): Promise<ShopListItem> {
+        const shopList = this.makeShopListPointer(listId);
+        const params = {where: {shopList, sequence}, order: 'sequence'};
+        const {results} = await this.send(
+            'GET',
+            '/classes/ShopListItem',
+            params
         );
+        if (!results.length) {
+            throw Error(`No such list item: ${listId}/${sequence}`);
+        }
+        const item = results[0];
         return {
-            listId: row.list_id,
-            sequence: row.sequence,
-            text: row.item,
-            done: row.done ? true : false,
+            listId: item.shopList.objectId,
+            sequence: item.sequence,
+            text: item.text,
+            done: item.done,
         };
     }
 
     async getShopLists(): Promise<ShopList[]> {
-        const rows = await this.db.all('SELECT * FROM shoplist');
-        return rows.map((row) => ({
-            id: row.id,
-            name: row.name,
-            createdAt: new Date(row.created_at + 'Z').toISOString(),
+        const data = await this.send('GET', '/classes/ShopList');
+        return data.results.map((x: any) => ({
+            id: x.objectId,
+            name: x.name,
+            createdAt: x.createdAt,
         }));
     }
 
-    async getShopList(listId: number): Promise<ShopList> {
-        const row = await this.db.get(
-            'SELECT * FROM shoplist WHERE id=?',
-            listId
-        );
+    async getShopList(listId: Id): Promise<ShopList> {
+        const params = {where: {objectId: listId}};
+        const {results} = await this.send('GET', '/classes/ShopList', params);
+        if (!results.length) throw Error(`No such list: ${listId}`);
+        const item = results[0];
         return {
-            id: row.id,
-            name: row.name,
-            createdAt: new Date(row.created_at + 'Z').toISOString(),
+            id: item.objectId,
+            name: item.name,
+            createdAt: item.createdAt,
         };
     }
 
-    async getListItems(listId: number): Promise<ShopListItem[]> {
-        const rows = await this.db.all(
-            'SELECT * FROM shoplist_item WHERE list_id=?',
-            listId
+    async getListItems(listId: Id): Promise<ShopListItem[]> {
+        const shopList = this.makeShopListPointer(listId);
+        const params = {where: {shopList}, order: 'sequence'};
+        const {results} = await this.send(
+            'GET',
+            '/classes/ShopListItem',
+            params
         );
-        return rows.map((row) => ({
-            listId: row.list_id,
-            sequence: row.sequence,
-            text: row.item,
-            done: row.done ? true : false,
+        return results.map((item: any) => ({
+            listId: item.shopList.objectId,
+            sequence: item.sequence,
+            text: item.text,
+            done: item.done,
         }));
+    }
+
+    private async send(method: string, uri: string, data?: unknown) {
+        let url = this.baseUrl + uri;
+        const headers = {
+            'X-Parse-Application-Id': this.appId,
+            'X-Parse-REST-API-Key': this.restApiKey,
+            'Content-Type': 'application/json',
+        };
+        let body: string | null = null;
+        if (data && method == 'GET') {
+            const parameters = Object.entries(data).map(
+                ([k, v]) => `${k}=${encodeURIComponent(JSON.stringify(v))}`
+            );
+            url += '?' + parameters.join('&');
+        } else if (data) {
+            body = JSON.stringify(data);
+        }
+        const response = await fetch(url, {method, headers, body});
+        const responseData = await response.json();
+        if (response.status < 200 || response.status >= 300) {
+            throw Error(
+                `Failed ${method} ${uri} with status ${response.status}: ` +
+                    `${responseData?.error}`
+            );
+        }
+        return responseData;
+    }
+
+    private makeShopListPointer(listId: Id) {
+        return this.makePointer('ShopList', listId);
+    }
+
+    private makePointer(typeName: 'ShopList' | 'ShopListItem', id: Id) {
+        return {
+            __type: 'Pointer',
+            className: typeName,
+            objectId: id,
+        };
     }
 }
 
 async function kokeile() {
     const db = await getDatabase();
+
     const listaId = await db.createShopList('Testilista');
     console.log(listaId);
+
     await db.addItemToList(listaId, 'eka rivi');
     await db.addItemToList(listaId, 'toka rivi');
-    await db.addItemToList(listaId, 'kolmas rivi');
     const listat = await db.getShopLists();
-    console.log(`${listat[0].createdAt}`);
-    const ekanListanIteemit = await db.getListItems(listat[0].id);
-    console.log(ekanListanIteemit);
+    console.log(listat);
+
+    const listItem = await db.getListItem(listaId, 1);
+    console.log(listItem);
+
+    const lista = await db.getShopList(listaId);
+    console.log(lista);
+
+    const listanIteemit = await db.getListItems(listaId);
+    console.log(listanIteemit);
 }
 
 // kokeile();

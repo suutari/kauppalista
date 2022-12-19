@@ -13,15 +13,7 @@ export default async function handler(
         const {query} = req;
         const db = await getDatabase();
         const {id} = query;
-        const idNumber: number | null = tryParseInt(<string>id);
-        if (idNumber === null) {
-            res.status(400).json({
-                error: "The 'id' must be integer",
-                errorCode: 'bad-request',
-            });
-            return;
-        }
-        const shopList = await db.getShopList(idNumber);
+        const shopList = await db.getShopList(id as string);
         res.status(200).json(shopList);
     }
 }

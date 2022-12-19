@@ -1,3 +1,4 @@
+export type Id = string;
 
 export type ShopListData = {
     name: string;
@@ -5,11 +6,11 @@ export type ShopListData = {
 };
 
 export type ShopList = ShopListData & {
-    id: number;
+    id: Id;
 };
 
 export type ShopListItem = {
-    listId: number;
+    listId: Id;
     sequence: number;
     text: string;
     done: boolean;
