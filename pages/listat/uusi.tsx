@@ -25,7 +25,7 @@ export default function UusiListaSivu() {
             return;
         }
 
-        const response = await callApi('/api/listat/', 'POST', {name});
+        const response = await callApi('/api/listat', 'POST', {name});
         if (response && response?.id) {
             router.push(`/lista/${response.id}`);
         } else if (response && response.error) {
