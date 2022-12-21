@@ -7,10 +7,11 @@ import {formatDateString} from '@/utils/datetime';
 import {ShopList} from '@/utils/types';
 
 type PropsType = {
-    listat: ShopList[];
+    listat?: ShopList[];
+    error?: string;
 };
 
-export default function ListatSivu({listat}: PropsType) {
+export default function ListatSivu({listat, error}: PropsType) {
     function ListaListItem({tiedot}: {tiedot: ShopList}) {
         const {id, name, createdAt} = tiedot;
         return (
@@ -28,20 +29,35 @@ export default function ListatSivu({listat}: PropsType) {
         );
     }
 
-    return (
-        <Page title="Listat">
+    function Content() {
+        if (!listat) {
+            return <div className="error">{error ?? 'Tuntematon virhe'}</div>;
+        }
+        return (
             <ul>
                 {listat.map((lista) => (
                     <ListaListItem key={lista.id} tiedot={lista} />
                 ))}
             </ul>
+        );
+    }
+
+    return (
+        <Page title="Listat">
+            <Content />
         </Page>
     );
 }
 
 export const getServerSideProps: GetServerSideProps<PropsType> = async () => {
-    const listat: ShopList[] = await callApi('/api/listat');
+    let listat: ShopList[] | undefined = undefined;
+    let error: string | undefined = undefined;
+    try {
+        listat = await callApi('/api/listat');
+    } catch (e) {
+        error = (e as Error).message;
+    }
     return {
-        props: {listat},
+        props: {listat, error},
     };
 };
