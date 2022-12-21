@@ -4,11 +4,12 @@ import Link from 'next/link';
 import {Page} from '@/components/Page';
 import {callApi} from '@/utils/apicall';
 import {formatDateString} from '@/utils/datetime';
+import {ErrorResponse} from '@/utils/errors';
 import {ShopList} from '@/utils/types';
 
 type PropsType = {
-    listat?: ShopList[];
-    error?: string;
+    listat: ShopList[] | null;
+    error: string | null;
 };
 
 export default function ListatSivu({listat, error}: PropsType) {
@@ -50,12 +51,16 @@ export default function ListatSivu({listat, error}: PropsType) {
 }
 
 export const getServerSideProps: GetServerSideProps<PropsType> = async () => {
-    let listat: ShopList[] | undefined = undefined;
-    let error: string | undefined = undefined;
+    let listat: ShopList[] | ErrorResponse | null = null;
+    let error: string | null = null;
     try {
         listat = await callApi('/api/listat');
     } catch (e) {
         error = (e as Error).message;
+    }
+    if (!listat || 'error' in listat) {
+        error = listat?.error ?? 'An error';
+        listat = null;
     }
     return {
         props: {listat, error},
